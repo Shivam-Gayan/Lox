@@ -12,7 +12,6 @@
     <Folder Include="Utils\" />
     <Folder Include="Runtime\" />
     <Folder Include="Parsing\" />
-    <Folder Include="Scanner\" />
   </ItemGroup>
 
 </Project>
