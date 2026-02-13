@@ -1,17 +1,36 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data.Common;
 using System.Text;
 
 namespace Lox.Scanner
 {
-    public class Scanner(string source)
+    public class Scan(string source)
     {
         private readonly String source = source;
         private readonly List<Token> tokens = [];
         private int start = 0;
         private int current = 0;
         private int line = 1;
-
+        private readonly Dictionary<String, TokenType> keywords = new()
+        {
+            { "and" , TokenType.AND },
+            { "class", TokenType.CLASS },
+            { "else", TokenType.ELSE },
+            { "false", TokenType.ELSE },
+            { "for", TokenType.FOR },
+            { "fun", TokenType.FUN },
+            { "if", TokenType.IF },
+            { "nil", TokenType.NIL },
+            { "or", TokenType.OR },
+            { "print", TokenType.PRINT },
+            { "return", TokenType.RETURN },
+            { "super", TokenType.SUPER },
+            { "this", TokenType.THIS },
+            { "true", TokenType.TRUE },
+            { "var", TokenType.VAR },
+            { "while", TokenType.WHILE }
+        };
         public List<Token> ScanTokens()
         {
             while (!IsAtEnd())
@@ -51,10 +70,10 @@ namespace Lox.Scanner
                 case '~': AddToken(TokenType.BIT_NOT); break;
 
                 // One Or Two character Tokens
-                case '!': // !=
+                case '!': // != or !
                     AddToken(Match('=') ? TokenType.BANG_EQUAL : TokenType.BANG);
                     break;
-                case '=': // ==
+                case '=': // == or =
                     AddToken(Match('=') ? TokenType.EQUAL_EQUAL : TokenType.EQUAL);
                     break;
                 case '<': // <= or <<
@@ -85,7 +104,25 @@ namespace Lox.Scanner
                         {
                             Advance();
                         }
-                    } else
+                    } 
+                    else if (Match('*')) 
+                    {
+                        while (!(Peek() == '*' && PeekNext() == '/') && !IsAtEnd())
+                        {
+                            if (Peek() == '\n') line++;
+                            Advance();
+                        }
+
+                        if (IsAtEnd())
+                        {
+                            Lox.Error(line, "Unterminated Comment");
+                            return;
+                        }
+
+                        Advance(); // *
+                        Advance(); // /
+                    }
+                    else
                     {
                         AddToken(TokenType.SLASH);
                     }
@@ -99,13 +136,88 @@ namespace Lox.Scanner
                     line++;
                     break;
                 case '"':
-
+                    String();
                     break;
+                
 
                 default:
-                    Lox.Error(line, "Unexpected Character.");
+                    if (IsDigit(c))
+                    {
+                        Number();
+                    }
+                    else if (IsAlpha(c))
+                    {
+                        Identifier();
+                    }
+                    else
+                    {
+                        Lox.Error(line, "Unexpected Character.");
+                    }
                     break;
             }
+        }
+
+        private void Identifier()
+        {
+            while (IsAlphaNumeric(Peek())) Advance();
+
+            String text = source[start..current];
+
+            TokenType type = keywords.TryGetValue(text, out TokenType keywordType) ? keywordType : TokenType.IDENTIFIER;
+
+            AddToken(type);
+        }
+
+        private bool IsAlpha(char c)
+        {
+            return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c == '_');
+        }
+
+        private bool IsAlphaNumeric(char c)
+        {
+            return IsAlpha(c) || IsDigit(c);
+        }
+        private void Number()
+        {
+            while (IsDigit(Peek())) Advance();
+
+            // Check for fractional part
+            if (Peek() == '.' && IsDigit(PeekNext()))
+            {
+                // Consume .
+                Advance();
+                
+                while (IsDigit(Peek())) Advance();
+            }
+
+            AddToken(TokenType.NUMBER,double.Parse(source[start..current]));
+
+        }
+
+
+        private void String()
+        {
+            while(Peek() != '"' && !IsAtEnd())
+            {
+                if (Peek() == '\n') line++;
+                Advance();
+            }
+
+            if(IsAtEnd())
+            {
+                Lox.Error(line, "Unterminated String.");
+                return;
+            }
+            // closing "
+            Advance();
+            // Trimming Surrounding Qoutes
+            String value = source[(start+1)..(current-1)];
+            AddToken(TokenType.STRING, value);
+        }
+
+        private bool IsDigit(char c)
+        {
+            return c >= '0' && c <= '9';
         }
 
         private char Advance() { return source[current++]; }
@@ -131,6 +243,12 @@ namespace Lox.Scanner
         {
             if (IsAtEnd()) return '\0';
             return source[current];
+        }
+
+        private char PeekNext()
+        {
+            if (current + 1 >= source.Length) return '\0';
+            return source[current+1];
         }
         private bool IsAtEnd() { return current >= source.Length; }
 

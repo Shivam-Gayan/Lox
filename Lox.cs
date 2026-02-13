@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Lox.Scanner;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -40,11 +41,13 @@ namespace Lox
         }
         public static void Run(string source)
         {
-            string? scanCode = Console.ReadLine();
-            // List<Token> tokens = scanCode.ScanTokens();
-            /*
-             * foreach (Token token in tokens)
-             */
+            Scan scanner = new(source);
+            List<Token> tokens = scanner.ScanTokens();
+
+            foreach (Token token in tokens)
+            {
+                Console.WriteLine(token);
+            }
         }
 
         public static void Error(int line, string message)
