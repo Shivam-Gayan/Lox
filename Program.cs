@@ -1,6 +1,4 @@
-﻿using Lox;
-using System;
-class Program
+﻿class Program
 {
     static void Main(string[] args)
     {
@@ -11,11 +9,11 @@ class Program
         }
         else if (args.Length == 1)
         {
-            // runFile(args[0]);
+            Lox.Lox.RunFile(args[0]);
         }
         else
         {
-            // runPrompt(); 
+             Lox.Lox.RunPrompt();
 
         }
     }
