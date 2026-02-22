@@ -1,5 +1,6 @@
 ﻿using Lox.Ast;
 using Lox.Parsing;
+using Lox.Runtime;
 using Lox.Scanner;
 using System;
 using System.Collections.Generic;
@@ -10,7 +11,8 @@ namespace Lox
     public class Lox
     {
         static bool hadError = false;
-
+        static bool hadRuntimeError = false;
+        private static readonly Interpreter interpreter = new();
         public static void RunFile(String Path)
         {
             if (File.Exists(Path))
@@ -19,6 +21,7 @@ namespace Lox
                 Run(Encoding.UTF8.GetString(bytes));
 
                 if (hadError) System.Environment.Exit(65);
+                if (hadRuntimeError) System.Environment.Exit(70);
 
             } else
             {
@@ -50,6 +53,8 @@ namespace Lox
 
             if (hadError) return;
 
+            interpreter.Interpret(expression);
+
             Console.WriteLine(expression);
         }
 
@@ -66,6 +71,12 @@ namespace Lox
             {
                 Report(token.line, " at '" + token.lexeme + "'", messsage);
             }
+        }
+
+        public static void RuntimeError(RuntimeError error) 
+        {
+            Console.Error.WriteLine($"{error.Message}\n[line {error.Token.line}]");
+            hadRuntimeError = true;
         }
         private static void Report(int line,string where,string message)
         {

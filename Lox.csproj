@@ -9,7 +9,6 @@
 
   <ItemGroup>
     <Folder Include="Errors\" />
-    <Folder Include="Runtime\" />
   </ItemGroup>
 
 </Project>
