@@ -54,7 +54,16 @@ namespace Lox
         {
             Report(line, "", message);
         }
-
+        public static void Error(Token token, string messsage)
+        {
+            if (token.type == TokenType.EOF)
+            {
+                Report(token.line, " at end", messsage);
+            } else
+            {
+                Report(token.line, " at '" + token.lexeme + "'", messsage);
+            }
+        }
         private static void Report(int line,string where,string message)
         {
             Console.Error.WriteLine("[Line " + line + "] Error" + where + ": " + message);

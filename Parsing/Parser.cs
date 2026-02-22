@@ -33,9 +33,51 @@ namespace Lox.Parsing
 
         private Expr Comparison()
         {
-            Expr expr = Term();
+            Expr expr = BitwiseOr();
 
             while (Match(TokenType.GREATER, TokenType.GREATER_EQUAL, TokenType.LESS, TokenType.LESS_EQUAL))
+            {
+                Token operatorToken = Previous();
+                Expr right = BitwiseOr();
+                expr = new Binary(expr, operatorToken, right);
+            }
+
+            return expr;
+        }
+
+        private Expr BitwiseOr()
+        {
+            Expr expr = BitwiseXor();
+
+            while (Match(TokenType.BIT_OR))
+            {
+                Token operatorToken = Previous();
+                Expr right = BitwiseXor();
+                expr = new Binary(expr, operatorToken, right);
+            }
+
+            return expr;
+        }
+
+        private Expr BitwiseXor()
+        {
+            Expr expr = BitwiseAnd();
+
+            while (Match(TokenType.BIT_XOR))
+            {
+                Token operatorToken = Previous();
+                Expr right = BitwiseAnd();
+                expr = new Binary(expr, operatorToken, right);
+            }
+
+            return expr;
+        }
+
+        private Expr BitwiseAnd()
+        {
+            Expr expr = Term();
+
+            while(Match(TokenType.BIT_AND))
             {
                 Token operatorToken = Previous();
                 Expr right = Term();
@@ -44,7 +86,6 @@ namespace Lox.Parsing
 
             return expr;
         }
-
         private Expr Term()
         {
             Expr expr = Factor();
@@ -75,7 +116,7 @@ namespace Lox.Parsing
 
         private Expr Unary()
         {
-            if (Match(TokenType.BANG, TokenType.MINUS))
+            if (Match(TokenType.BANG, TokenType.MINUS, TokenType.BIT_NOT))
             {
                 Token operatorToken = Previous();
                 Expr right = Unary();
@@ -155,6 +196,12 @@ namespace Lox.Parsing
             if (Check(type)) return Advance();
 
             throw Error(Peek(), message);
+        }
+
+        private ParseError Error(Token token,string message)
+        {
+            Lox.Error(token, message);
+            return new ParseError();
         }
 
     }
