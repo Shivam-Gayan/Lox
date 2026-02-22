@@ -1,4 +1,6 @@
-﻿using Lox.Scanner;
+﻿using Lox.Ast;
+using Lox.Parsing;
+using Lox.Scanner;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -43,11 +45,12 @@ namespace Lox
         {
             Scan scanner = new(source);
             List<Token> tokens = scanner.ScanTokens();
+            Parser parser = new Parser(tokens);
+            Expr expression = parser.Parse();
 
-            foreach (Token token in tokens)
-            {
-                Console.WriteLine(token);
-            }
+            if (hadError) return;
+
+            Console.WriteLine(expression);
         }
 
         public static void Error(int line, string message)
