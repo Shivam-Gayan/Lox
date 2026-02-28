@@ -57,6 +57,19 @@ namespace Lox.Runtime
             ExecuteBlock(stmt.Statements, new Environment(environment));
             return null;
         }
+
+        public object? VisitIfStmt(If stmt)
+        {
+            if (IsTruthy(Evaluate(stmt.Condition)))
+            {
+                Execute(stmt.ThenBranch);
+            } else if (stmt.ElseBranch != null)
+            {
+                Execute(stmt.ElseBranch);
+            }
+
+            return null;
+        }
         
         //============================================
         //            Expression Visitors             
