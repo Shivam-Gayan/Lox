@@ -44,9 +44,24 @@ namespace Lox.Parsing
 
         private Expr Comparison()
         {
+            Expr expr = Shift();
+
+            while (Match(TokenType.GREATER, TokenType.GREATER_EQUAL,
+                         TokenType.LESS, TokenType.LESS_EQUAL))
+            {
+                Token operatorToken = Previous();
+                Expr right = Shift();
+                expr = new Binary(expr, operatorToken, right);
+            }
+
+            return expr;
+        }
+
+        private Expr Shift()
+        {
             Expr expr = BitwiseOr();
 
-            while (Match(TokenType.GREATER, TokenType.GREATER_EQUAL, TokenType.LESS, TokenType.LESS_EQUAL))
+            while (Match(TokenType.SHIFT_LEFT, TokenType.SHIFT_RIGHT))
             {
                 Token operatorToken = Previous();
                 Expr right = BitwiseOr();

@@ -24,7 +24,7 @@ namespace Lox.Runtime
         }
 
         //============================================
-        //            Expression Visitors
+        //            Expression Visitors             
         //============================================
         public object VisitAssignExpr(Assign expr)
         {
@@ -38,53 +38,62 @@ namespace Lox.Runtime
 
             switch (expr.Operator.type)
             {
-                case TokenType.BANG_EQUAL: return !IsEqual(left, right);
-                case TokenType.EQUAL_EQUAL: return IsEqual(left, right);
+                // ==========================
+                // Equality
+                // ==========================
+                case TokenType.BANG_EQUAL:
+                    return !IsEqual(left, right);
 
-                case TokenType.BIT_AND:
-                    CheckNumberOperands(expr.Operator, left, right);
-                    return (int)(double)left & (int)(double)right;
-                case TokenType.BIT_OR:
-                    CheckNumberOperands(expr.Operator, left, right);
-                    return (int)(double)left | (int)(double)right;
-                case TokenType.BIT_XOR:
-                    CheckNumberOperands(expr.Operator, left, right);
-                    return (int)(double)left ^ (int)(double)right;
+                case TokenType.EQUAL_EQUAL:
+                    return IsEqual(left, right);
 
-                case TokenType.GREATER:
-                    CheckNumberOperands(expr.Operator, left, right);
-                    return (double)left > (double)right;
-                case TokenType.GREATER_EQUAL:
-                    CheckNumberOperands(expr.Operator, left, right);
-                    return (double)left >= (double)right;
-                case TokenType.LESS:
-                    CheckNumberOperands(expr.Operator, left, right);
-                    return (double)left < (double)right;
-                case TokenType.LESS_EQUAL:
-                    CheckNumberOperands(expr.Operator, left, right);
-                    return (double)left <= (double)right;
-
+                // ==========================
+                // Arithmetic
+                // ==========================
                 case TokenType.MINUS:
-                    CheckNumberOperands(expr.Operator, left, right);
-                    return (double)left - (double)right;
-                case TokenType.PLUS:
-                    if (left is double l && right is double r)
-                    {
-                        return l + r;
-                    }
+                    return NumericBinary(expr.Operator, left, right, (a, b) => a - b);
 
-                    if (left is string le && right is string ri)
-                    {
-                        return le + ri;
-                    }
-
-                    throw new RuntimeError(expr.Operator, "Operands must be two numbers or two strings.");
-                case TokenType.SLASH:
-                    CheckNumberOperands(expr.Operator, left, right);
-                    return (double)left / (double)right;
                 case TokenType.STAR:
-                    CheckNumberOperands(expr.Operator, left, right);
-                    return (double)left * (double)right;
+                    return NumericBinary(expr.Operator, left, right, (a, b) => a * b);
+
+                case TokenType.SLASH:
+                    return SafeDivide(expr.Operator, left, right);
+
+                case TokenType.PLUS:
+                    return HandlePlus(expr.Operator, left, right);
+
+                // ==========================
+                // Comparisons (numbers only)
+                // ==========================
+                case TokenType.GREATER:
+                    return NumericComparison(expr.Operator, left, right, (a, b) => a > b);
+
+                case TokenType.GREATER_EQUAL:
+                    return NumericComparison(expr.Operator, left, right, (a, b) => a >= b);
+
+                case TokenType.LESS:
+                    return NumericComparison(expr.Operator, left, right, (a, b) => a < b);
+
+                case TokenType.LESS_EQUAL:
+                    return NumericComparison(expr.Operator, left, right, (a, b) => a <= b);
+
+                // ==========================
+                // Bitwise (integers only)
+                // ==========================
+                case TokenType.BIT_AND:
+                    return BitwiseBinary(expr.Operator, left, right, (a, b) => a & b);
+
+                case TokenType.BIT_OR:
+                    return BitwiseBinary(expr.Operator, left, right, (a, b) => a | b);
+
+                case TokenType.BIT_XOR:
+                    return BitwiseBinary(expr.Operator, left, right, (a, b) => a ^ b);
+
+                case TokenType.SHIFT_LEFT:
+                    return BitwiseBinary(expr.Operator, left, right, (a, b) => a << b);
+
+                case TokenType.SHIFT_RIGHT:
+                    return BitwiseBinary(expr.Operator, left, right, (a, b) => a >> b);
             }
 
             return null;
@@ -136,13 +145,16 @@ namespace Lox.Runtime
 
             switch (expr.Operator.type)
             {
-                case TokenType.BIT_NOT:
-                    CheckNumberOperand(expr.Operator, right);
-                    return ~(int)(double)right;
                 case TokenType.BANG:
                     return !IsTruthy(right);
+
                 case TokenType.MINUS:
+                    RequireNumber(expr.Operator, right);
                     return -(double)right;
+
+                case TokenType.BIT_NOT:
+                    RequireNumber(expr.Operator, right);
+                    return ~(int)(double)right;
             }
 
             return null;
@@ -156,6 +168,67 @@ namespace Lox.Runtime
         //=============================================
         //         Expression Helper Methods
         //=============================================
+        private object NumericBinary(Token op, object left, object right, Func<double, double, double> operation)
+        {
+            RequireTwoNumbers(op, left, right);
+            return operation((double)left, (double)right);
+        }
+
+        private object NumericComparison(Token op, object left, object right, Func<double, double, bool> comparison)
+        {
+            RequireTwoNumbers(op, left, right);
+            return comparison((double)left, (double)right);
+        }
+        private object SafeDivide(Token op, object left, object right)
+        {
+            RequireTwoNumbers(op, left, right);
+
+            double divisor = (double)right;
+            if (divisor == 0)
+                throw new RuntimeError(op, "Division by zero.");
+
+            return (double)left / divisor;
+        }
+
+        private object HandlePlus(Token op, object left, object right)
+        {
+            if (left is double l && right is double r)
+                return l + r;
+
+            if (left is string ls && right is string rs)
+                return ls + rs;
+
+            throw new RuntimeError(op,
+                "Operands must be two numbers or two strings.");
+        }
+        private object BitwiseBinary(Token op, object left, object right, Func<int, int, int> operation)
+        {
+            RequireTwoNumbers(op, left, right);
+
+            double dl = (double)left;
+            double dr = (double)right;
+
+            if (dl % 1 != 0 || dr % 1 != 0)
+                throw new RuntimeError(op, "Bitwise operands must be integers.");
+
+            int a = (int)dl;
+            int b = (int)dr;
+
+            return operation(a, b);
+        }
+
+        private void RequireNumber(Token op, object operand)
+        {
+            if (operand is double) return;
+            throw new RuntimeError(op, "Operand must be a number.");
+        }
+
+        private void RequireTwoNumbers(Token op, object left, object right)
+        {
+            if (left is double && right is double) return;
+            throw new RuntimeError(op, "Operands must be numbers.");
+        }
+
 
         private object Evaluate(Expr expr)
         {
@@ -175,19 +248,6 @@ namespace Lox.Runtime
             if (a == null) return false;
 
             return a.Equals(b);
-        }
-
-        private void CheckNumberOperand(Token opr, object operand)
-        {
-            if (operand is double) return;
-            throw new RuntimeError(opr, "Operand must be a number.");
-        }
-
-        private void CheckNumberOperands(Token opr, object left, object right)
-        {
-            if (left is double && right is double) return;
-
-            throw new RuntimeError(opr, "Operands must be numbers.");
         }
 
         private string Stringify(object obj)
