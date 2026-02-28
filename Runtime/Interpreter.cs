@@ -171,7 +171,17 @@ namespace Lox.Runtime
 
         public object VisitLogicalExpr(Logical expr)
         {
-            throw new NotImplementedException();
+            object left = Evaluate(expr.Left);
+
+            if (expr.Operator.type == TokenType.OR)
+            {
+                if (IsTruthy(left)) return left;
+            } else
+            {
+                if (!IsTruthy(left)) return left;
+            }
+
+            return Evaluate(expr.Right);
         }
 
         public object VisitSetExpr(Set expr)
