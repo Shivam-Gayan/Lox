@@ -1,11 +1,5 @@
-// testing comments
+var a = 12;
+var b = 20;
 
-/* multiline 
+print a+b;
 
-print "this is my first program"
-
-if 
-
-
-
-/*

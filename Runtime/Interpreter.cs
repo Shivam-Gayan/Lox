@@ -7,7 +7,7 @@ namespace Lox.Runtime
 {
     public class Interpreter : Expr.IVisitor<Object?>, Stmt.IVisitor<Object?>
     {
-
+        private Environment environment = new();
 
         public void Interpret(List<Stmt> statements)
         {
@@ -40,14 +40,32 @@ namespace Lox.Runtime
             return null;
         }
 
+        public object? VisitVarStmt(Var stmt)
+        {
+            object? value = null;
+            if (stmt.Initializer != null)
+            {
+                value = Evaluate(stmt.Initializer);
+            }
 
+            environment.Define(stmt.Name.lexeme, value);
+            return null;
+        }
+
+        public object? VisitBlockStmt(Block stmt)
+        {
+            ExecuteBlock(stmt.Statements, new Environment(environment));
+            return null;
+        }
         
         //============================================
         //            Expression Visitors             
         //============================================
         public object VisitAssignExpr(Assign expr)
         {
-            throw new NotImplementedException();
+            object value = Evaluate(expr.Value);
+            environment.Assign(expr.Name, value);
+            return value;
         }
 
         public object? VisitBinaryExpr(Binary expr)
@@ -181,16 +199,33 @@ namespace Lox.Runtime
 
         public object VisitVariableExpr(Variable expr)
         {
-            throw new NotImplementedException();
+            return environment.Get(expr.Name);
         }
 
         //=============================================
-        //         Expression Helper Methods
+        //               Helper Methods
         //=============================================
 
         private void Execute(Stmt stmt)
         {
             stmt.Accept(this);
+        }
+
+        private void ExecuteBlock(List<Stmt> statements, Environment environment)
+        {
+            Environment previous = this.environment;
+
+            try
+            {
+                this.environment = environment;
+
+                foreach(Stmt statement in statements)
+                {
+                    Execute(statement);
+                }
+            } finally {
+                this.environment = previous;
+            }
         }
 
         private object NumericBinary(Token op, object left, object right, Func<double, double, double> operation)

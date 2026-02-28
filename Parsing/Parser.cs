@@ -27,11 +27,34 @@ namespace Lox.Parsing
         {
             if (Match(TokenType.PRINT)) return PrintStatement();
 
+            if (Match(TokenType.LEFT_BRACE)) return new Block(Block());
+
             return ExpressionStatement();
         }
         private Expr Expression()
         {
-            return Equality();
+            return Assignment();
+        }
+
+        private Expr Assignment()
+        {
+            Expr expr = Equality();
+
+            if (Match(TokenType.EQUAL))
+            {
+                Token equals = Previous();
+                Expr value = Assignment();
+
+                if (expr is Variable)
+                {
+                    Token name = ((Variable)expr).Name;
+                    return new Assign(name, value);
+                }
+
+                Error(equals, "Invalid assignment target.");
+            }
+
+            return expr;
         }
 
         private Expr Equality()
@@ -189,6 +212,19 @@ namespace Lox.Parsing
         //         Statement Helper Methods
         //=============================================
 
+        private List<Stmt> Block()
+        {
+            List<Stmt> statements = [];
+
+            while (!Check(TokenType.RIGHT_BRACE) && !IsAtEnd())
+            {
+                statements.Add(Declaration());
+            }
+
+            Consume(TokenType.RIGHT_BRACE, "Expect '}' after block.");
+
+            return statements;
+        }
         private Stmt Declaration()
         {
             try
