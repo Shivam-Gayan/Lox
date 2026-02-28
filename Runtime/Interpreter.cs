@@ -290,7 +290,7 @@ namespace Lox.Runtime
         }
 
 
-        private object Evaluate(Expr expr)
+        public object Evaluate(Expr expr)
         {
             return expr.Accept(this);
         }
@@ -310,7 +310,7 @@ namespace Lox.Runtime
             return a.Equals(b);
         }
 
-        private string? Stringify(object obj)
+        public string? Stringify(object obj)
         {
             if (obj == null) return "nil";
 

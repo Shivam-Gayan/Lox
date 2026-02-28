@@ -1,4 +1,5 @@
 ﻿using Lox.Ast;
+using Lox.Ast.Statements;
 using Lox.Parsing;
 using Lox.Runtime;
 using Lox.Scanner;
@@ -12,6 +13,7 @@ namespace Lox
     {
         static bool hadError = false;
         static bool hadRuntimeError = false;
+        private static bool replMode = false;
         private static readonly Interpreter interpreter = new();
         public static void RunFile(String Path)
         {
@@ -31,31 +33,39 @@ namespace Lox
         }
         public static void RunPrompt()
         {
-            for(;;)
+            replMode = true;
+
+            for (;;)
             {
-                Console.WriteLine("> ");
-
+                Console.Write("> ");
                 string? input = Console.ReadLine();
-
                 if (input == null) break;
 
                 Run(input);
-
                 hadError = false;
-            }  
+            }
         }
         public static void Run(string source)
         {
             Scan scanner = new(source);
             List<Token> tokens = scanner.ScanTokens();
+
             Parser parser = new(tokens);
             List<Stmt> statements = parser.Parse();
 
             if (hadError) return;
 
-            interpreter.Interpret(statements);
-
-            Console.WriteLine(statements);
+            if (replMode &&
+                statements.Count == 1 &&
+                statements[0] is Expression exprStmt)
+            {
+                var value = interpreter.Evaluate(exprStmt.ExpressionValue);
+                Console.WriteLine(interpreter.Stringify(value));
+            }
+            else
+            {
+                interpreter.Interpret(statements);
+            }
         }
 
         public static void Error(int line, string message)
