@@ -25,6 +25,8 @@ namespace Lox.Parsing
 
         private Stmt Statement()
         {
+            if (Match(TokenType.FOR)) return ForStatement();
+
             if (Match(TokenType.IF)) return IfStatement();
 
             if (Match(TokenType.PRINT)) return PrintStatement();
@@ -244,6 +246,55 @@ namespace Lox.Parsing
         //         Statement Helper Methods
         //=============================================
 
+        private Stmt ForStatement()
+        {
+            Consume(TokenType.LEFT_PAREN, "Expect '(' after 'for'.");
+
+            Stmt initializer;
+            if (Match(TokenType.SEMICOLON))
+            {
+                initializer = null;
+            } else if (Match(TokenType.VAR))
+            {
+                initializer = VarDeclaration();
+            } else
+            {
+                initializer = ExpressionStatement();
+            }
+
+            Expr condition = null;
+            if (!Check(TokenType.SEMICOLON))
+            {
+                condition = Expression();
+            }
+
+            Consume(TokenType.SEMICOLON, "Expect ';' after loop condition.");
+
+            Expr increment = null;
+            if(!Check(TokenType.RIGHT_PAREN))
+            {
+                increment = Expression();
+            }
+
+            Consume(TokenType.RIGHT_PAREN, "Expect ')' after for clauses.");
+
+            Stmt body = Statement();
+
+            if(increment != null)
+            {
+                body = new Block([body, new Expression(increment)]);
+            }
+
+            if (condition == null) condition = new Literal(true);
+            body = new While(condition, body);
+
+            if (initializer != null)
+            {
+                
+                body = new Block([initializer, body]);
+            }
+            return body;
+        }
         private Stmt WhileStatement()
         {
             Consume(TokenType.LEFT_PAREN, "Expect '(' after 'while'.");
