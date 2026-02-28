@@ -48,14 +48,14 @@ namespace Lox
         {
             Scan scanner = new(source);
             List<Token> tokens = scanner.ScanTokens();
-            Parser parser = new Parser(tokens);
-            Expr expression = parser.Parse();
+            Parser parser = new(tokens);
+            List<Stmt> statements = parser.Parse();
 
             if (hadError) return;
 
-            interpreter.Interpret(expression);
+            interpreter.Interpret(statements);
 
-            Console.WriteLine(expression);
+            Console.WriteLine(statements);
         }
 
         public static void Error(int line, string message)

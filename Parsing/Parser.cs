@@ -1,9 +1,8 @@
 ﻿using Lox.Ast;
 using Lox.Ast.Expressions;
+using Lox.Ast.Statements;
 using Lox.Scanner;
-using System;
-using System.Collections.Generic;
-using System.Text;
+
 
 namespace Lox.Parsing
 {
@@ -13,15 +12,22 @@ namespace Lox.Parsing
         private int current = 0;
         private class ParseError : Exception { }
 
-        public Expr Parse()
+        public List<Stmt> Parse()
         {
-            try
+            List<Stmt> statements = [];
+            while (!IsAtEnd())
             {
-                return Expression();
-            } catch (ParseError error)
-            {
-                return null;
+                statements.Add(Declaration());
             }
+
+            return statements;
+        }
+
+        private Stmt Statement()
+        {
+            if (Match(TokenType.PRINT)) return PrintStatement();
+
+            return ExpressionStatement();
         }
         private Expr Expression()
         {
@@ -112,6 +118,7 @@ namespace Lox.Parsing
 
             return expr;
         }
+
         private Expr Term()
         {
             Expr expr = Factor();
@@ -163,6 +170,11 @@ namespace Lox.Parsing
                 return new Literal(Previous().literal);
             }
 
+            if (Match(TokenType.IDENTIFIER))
+            {
+                return new Variable(Previous());
+            }
+
             if (Match(TokenType.LEFT_PAREN))
             {
                 Expr expr = Expression();
@@ -171,6 +183,55 @@ namespace Lox.Parsing
             }
 
             throw Error(Peek(), "Expect expression.");
+        }
+
+        //=============================================
+        //         Statement Helper Methods
+        //=============================================
+
+        private Stmt Declaration()
+        {
+            try
+            {
+                if (Match(TokenType.VAR)) return VarDeclaration();
+
+                return Statement();
+            } catch (ParseError)
+            {
+                Synchronize();
+                return null;
+            }
+        }
+
+        private Stmt VarDeclaration()
+        {
+            Token name = Consume(TokenType.IDENTIFIER, "Expect variable name.");
+
+            Expr initializer = null;
+
+            if(Match(TokenType.EQUAL))
+            {
+                initializer = Expression();
+            }
+
+            Consume(TokenType.SEMICOLON, "Expect ';' after variable declaration.");
+
+            return new Var(name, initializer);
+        }
+        private Stmt PrintStatement()
+        {
+            Expr value = Expression();
+            Consume(TokenType.SEMICOLON, "Expect ';' after value.");
+
+            return new Print(value);
+        }
+
+        private Stmt ExpressionStatement()
+        {
+            Expr expr = Expression();
+            Consume(TokenType.SEMICOLON, "Expect ';' after expression.");
+
+            return new Expression(expr);
         }
 
         //=============================================

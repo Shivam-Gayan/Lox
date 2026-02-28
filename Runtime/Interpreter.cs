@@ -1,28 +1,47 @@
 ﻿using Lox.Ast;
 using Lox.Ast.Expressions;
+using Lox.Ast.Statements;
 using Lox.Scanner;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace Lox.Runtime
 {
-    public class Interpreter : Expr.IVisitor<Object>
+    public class Interpreter : Expr.IVisitor<Object?>, Stmt.IVisitor<Object?>
     {
 
 
-        public void Interpret(Expr expression)
+        public void Interpret(List<Stmt> statements)
         {
             try
             {
-                object value = Evaluate(expression);
-                Console.WriteLine(Stringify(value));
+                foreach(Stmt statement in statements)
+                {
+                    Execute(statement);
+                }
             } catch (RuntimeError error)
             {
                 Lox.RuntimeError(error);
             }
         }
 
+        //============================================
+        //            Statement Visitors
+        //============================================
+
+        public object? VisitExpressionStmt(Expression stmt)
+        {
+            Evaluate(stmt.ExpressionValue);
+            return null;
+        }
+
+        public object? VisitPrintStmt(Print stmt)
+        {
+            object value = Evaluate(stmt.ExpressionValue);
+            Console.WriteLine(Stringify(value));
+            return null;
+        }
+
+
+        
         //============================================
         //            Expression Visitors             
         //============================================
@@ -31,7 +50,7 @@ namespace Lox.Runtime
             throw new NotImplementedException();
         }
 
-        public object VisitBinaryExpr(Binary expr)
+        public object? VisitBinaryExpr(Binary expr)
         {
             object left = Evaluate(expr.Left);
             object right = Evaluate(expr.Right);
@@ -114,7 +133,7 @@ namespace Lox.Runtime
             return Evaluate(expr.Expression);
         }
 
-        public object VisitLiteralExpr(Literal expr)
+        public object? VisitLiteralExpr(Literal expr)
         {
             return expr.Value;
         }
@@ -139,7 +158,7 @@ namespace Lox.Runtime
             throw new NotImplementedException();
         }
 
-        public object VisitUnaryExpr(Unary expr)
+        public object? VisitUnaryExpr(Unary expr)
         {
             object right = Evaluate(expr.Right);
 
@@ -168,6 +187,12 @@ namespace Lox.Runtime
         //=============================================
         //         Expression Helper Methods
         //=============================================
+
+        private void Execute(Stmt stmt)
+        {
+            stmt.Accept(this);
+        }
+
         private object NumericBinary(Token op, object left, object right, Func<double, double, double> operation)
         {
             RequireTwoNumbers(op, left, right);
@@ -250,7 +275,7 @@ namespace Lox.Runtime
             return a.Equals(b);
         }
 
-        private string Stringify(object obj)
+        private string? Stringify(object obj)
         {
             if (obj == null) return "nil";
 
