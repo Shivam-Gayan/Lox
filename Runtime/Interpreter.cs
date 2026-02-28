@@ -70,6 +70,16 @@ namespace Lox.Runtime
 
             return null;
         }
+
+        public object? VisitWhileStmt(While stmt)
+        {
+            while(IsTruthy(Evaluate(stmt.Condition)))
+            {
+                Execute(stmt.Body);
+            }
+
+            return null;
+        }
         
         //============================================
         //            Expression Visitors             

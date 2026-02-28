@@ -29,6 +29,8 @@ namespace Lox.Parsing
 
             if (Match(TokenType.PRINT)) return PrintStatement();
 
+            if (Match(TokenType.WHILE)) return WhileStatement();
+
             if (Match(TokenType.LEFT_BRACE)) return new Block(Block());
 
             return ExpressionStatement();
@@ -241,6 +243,16 @@ namespace Lox.Parsing
         //=============================================
         //         Statement Helper Methods
         //=============================================
+
+        private Stmt WhileStatement()
+        {
+            Consume(TokenType.LEFT_PAREN, "Expect '(' after 'while'.");
+            Expr condition = Expression();
+            Consume(TokenType.RIGHT_PAREN, "Expect ')' after condition.");
+            Stmt body = Statement();
+
+            return new While(condition, body);
+        }
 
         private Stmt IfStatement()
         {
