@@ -2,6 +2,8 @@
 using Lox.Ast.Expressions;
 using Lox.Ast.Statements;
 using Lox.Scanner;
+using System.Net.Http.Headers;
+using System.Runtime.Intrinsics.Arm;
 
 
 namespace Lox.Parsing
@@ -25,6 +27,8 @@ namespace Lox.Parsing
 
         private Stmt Statement()
         {
+            if (Match(TokenType.FUN)) return FunctionStatement("function");
+
             if (Match(TokenType.BREAK)) return BreakStatement();
 
             if (Match(TokenType.CONTINUE)) return ContinueStatement();
@@ -268,6 +272,33 @@ namespace Lox.Parsing
         //         Statement Helper Methods
         //=============================================
 
+        private Stmt FunctionStatement(string kind)
+        {
+            Token name = Consume(TokenType.IDENTIFIER, $"Expect {kind} name.");
+
+            Consume(TokenType.LEFT_PAREN, $"Expect '(' after {kind} name.");
+            List<Token> parameters = [];
+
+            if(!Check(TokenType.RIGHT_PAREN))
+            {
+                do
+                {
+                    if (parameters.Count >= 255)
+                    {
+                        Error(Peek(), "Can't have more than 255 parameters.");
+                    }
+
+                    parameters.Add(Consume(TokenType.IDENTIFIER, "Expect parameter name."));
+                } while (Match(TokenType.COMMA));
+            }
+
+            Consume(TokenType.RIGHT_PAREN, "Expect ')' after parameters.");
+
+            Consume(TokenType.LEFT_BRACE, "Expect '{' before" + kind + " body.");
+
+            List<Stmt> body = Block();
+            return new Function(name, parameters, body);
+        }
         private Stmt BreakStatement()
         {
             Consume(TokenType.SEMICOLON, "Expect ';' after 'break'.");

@@ -8,7 +8,7 @@ namespace Lox.Runtime
 {
     public class Interpreter : Expr.IVisitor<Object?>, Stmt.IVisitor<Object?>
     {
-        private readonly Environment globals = new();
+        public readonly Environment globals = new();
         private Environment environment;
         private int loopDepth = 0;
         private sealed class BreakException : Exception { }
@@ -125,7 +125,9 @@ namespace Lox.Runtime
 
         public object? VisitFunctionStmt(Function stmt)
         {
-            throw new NotImplementedException();
+            LoxFunction function = new(stmt);
+            environment.Define(stmt.Name.lexeme, function);
+            return null;
         }
 
         public object? VisitReturnStmt(Return stmt)
@@ -321,7 +323,7 @@ namespace Lox.Runtime
             stmt.Accept(this);
         }
 
-        private void ExecuteBlock(List<Stmt> statements, Environment environment)
+        public void ExecuteBlock(List<Stmt> statements, Environment environment)
         {
             Environment previous = this.environment;
 
