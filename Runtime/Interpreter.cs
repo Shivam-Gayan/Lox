@@ -2,16 +2,23 @@
 using Lox.Ast.Expressions;
 using Lox.Ast.Statements;
 using Lox.Scanner;
+using System.Net.Http.Headers;
 
 namespace Lox.Runtime
 {
     public class Interpreter : Expr.IVisitor<Object?>, Stmt.IVisitor<Object?>
     {
-        private Environment environment = new();
+        private readonly Environment globals = new();
+        private Environment environment;
         private int loopDepth = 0;
         private sealed class BreakException : Exception { }
         private sealed class ContinueException : Exception { }
 
+        public Interpreter()
+        {
+            environment = globals;
+            NativeFunctions.Register(globals);
+        }
         public void Interpret(List<Stmt> statements)
         {
             try
@@ -116,6 +123,21 @@ namespace Lox.Runtime
             throw new ContinueException();
         }
 
+        public object? VisitFunctionStmt(Function stmt)
+        {
+            throw new NotImplementedException();
+        }
+
+        public object? VisitReturnStmt(Return stmt)
+        {
+            throw new NotImplementedException();
+        }
+
+        public object? VisitClassStmt(Class stmt)
+        {
+            throw new NotImplementedException();
+        }
+
         //============================================
         //            Expression Visitors             
         //============================================
@@ -196,7 +218,27 @@ namespace Lox.Runtime
 
         public object VisitCallExpr(Call expr)
         {
-            throw new NotImplementedException();
+            object callee = Evaluate(expr.Callee);
+
+            List<object> arguments = [];
+            foreach (Expr argument in expr.Arguments)
+            {
+                arguments.Add(Evaluate(argument));
+            }
+
+            if (callee is not ILoxCallable)
+            {
+                throw new RuntimeError(expr.Paren, "Can only call functions and classes.");
+            }
+            ILoxCallable function = (ILoxCallable)callee;
+
+            if (arguments.Count != function.Arity())
+            {
+                throw new RuntimeError(expr.Paren, $"Expected {function.Arity()} arguments but got {arguments.Count}.");
+            }
+
+
+            return function.Call(this, arguments);
         }
 
         public object VisitGetExpr(Get expr)

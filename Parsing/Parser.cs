@@ -217,7 +217,25 @@ namespace Lox.Parsing
                 return new Unary(operatorToken, right);
             }
 
-            return Primary();
+            return Call();
+        }
+
+        private Expr Call()
+        {
+            Expr expr = Primary();
+
+            while(true)
+            {
+                if (Match(TokenType.LEFT_PAREN))
+                {
+                    expr = FinishCall(expr);
+                } else
+                {
+                    break;
+                }
+            }
+
+            return expr;
         }
 
         private Expr Primary()
@@ -399,7 +417,26 @@ namespace Lox.Parsing
         //         Expression Helper Methods
         //=============================================
 
-        
+        private Expr FinishCall(Expr callee)
+        {
+            List<Expr> arguements = [];
+
+            if (!Check(TokenType.RIGHT_PAREN))
+            {
+                do
+                {
+                    if (arguements.Count >= 255)
+                    {
+                        Error(Peek(), "Can't have more than 255 arguements.");
+                    }
+                    arguements.Add(Expression());
+                } while (Match(TokenType.COMMA));
+            }
+
+            Token paren = Consume(TokenType.RIGHT_PAREN, "Expect ')' after arguements.");
+
+            return new Call(callee, paren, arguements);
+        }
         //=============================================
         //               Helper Methods
         //=============================================
