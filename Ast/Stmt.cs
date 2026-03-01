@@ -16,6 +16,8 @@ namespace Lox.Ast
             R VisitReturnStmt(Return stmt);
             R VisitVarStmt(Var stmt);
             R VisitWhileStmt(While stmt);
+            R VisitBreakStmt(Break stmt);
+            R VisitContinueStmt(Continue stmt);
         }
 
         public abstract R Accept<R>(IVisitor<R> visitor);

@@ -25,6 +25,10 @@ namespace Lox.Parsing
 
         private Stmt Statement()
         {
+            if (Match(TokenType.BREAK)) return BreakStatement();
+
+            if (Match(TokenType.CONTINUE)) return ContinueStatement();
+
             if (Match(TokenType.FOR)) return ForStatement();
 
             if (Match(TokenType.IF)) return IfStatement();
@@ -246,6 +250,17 @@ namespace Lox.Parsing
         //         Statement Helper Methods
         //=============================================
 
+        private Stmt BreakStatement()
+        {
+            Consume(TokenType.SEMICOLON, "Expect ';' after 'break'.");
+            return new Break();
+        }
+
+        private Stmt ContinueStatement()
+        {
+            Consume(TokenType.SEMICOLON, "Expect ';' after 'continue'.");
+            return new Continue();
+        }
         private Stmt ForStatement()
         {
             Consume(TokenType.LEFT_PAREN, "Expect '(' after 'for'.");

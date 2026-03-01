@@ -9,6 +9,7 @@ namespace Lox.Scanner
         // Single Character Tokens
         LEFT_PAREN, RIGHT_PAREN, LEFT_BRACE, RIGHT_BRACE,
         COMMA, DOT, MINUS, PLUS, SEMICOLON, SLASH,STAR,
+        BREAK,CONTINUE,
 
         // One Or Two character Tokens
         BANG, BANG_EQUAL,

@@ -8,6 +8,8 @@ namespace Lox.Runtime
     public class Interpreter : Expr.IVisitor<Object?>, Stmt.IVisitor<Object?>
     {
         private Environment environment = new();
+        private sealed class BreakException : Exception { }
+        private sealed class ContinueException : Exception { }
 
         public void Interpret(List<Stmt> statements)
         {
@@ -75,12 +77,33 @@ namespace Lox.Runtime
         {
             while(IsTruthy(Evaluate(stmt.Condition)))
             {
-                Execute(stmt.Body);
+                try
+                {
+                    Execute(stmt.Body);
+                } 
+                catch (ContinueException)
+                {
+                    continue;
+                } 
+                catch (BreakException)
+                {
+                    break;
+                }
             }
 
             return null;
         }
-        
+
+        public object? VisitBreakStmt(Break stmt)
+        {
+            throw new BreakException();
+        }
+
+        public object? VisitContinueStmt(Continue stmt)
+        {
+            throw new ContinueException();
+        }
+
         //============================================
         //            Expression Visitors             
         //============================================
