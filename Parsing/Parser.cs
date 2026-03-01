@@ -253,13 +253,15 @@ namespace Lox.Parsing
         private Stmt BreakStatement()
         {
             Consume(TokenType.SEMICOLON, "Expect ';' after 'break'.");
-            return new Break();
+            Token keyword = Previous();
+            return new Break(keyword);
         }
 
         private Stmt ContinueStatement()
         {
             Consume(TokenType.SEMICOLON, "Expect ';' after 'continue'.");
-            return new Continue();
+            Token keyword = Previous();
+            return new Continue(keyword);
         }
         private Stmt ForStatement()
         {

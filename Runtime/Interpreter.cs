@@ -8,6 +8,7 @@ namespace Lox.Runtime
     public class Interpreter : Expr.IVisitor<Object?>, Stmt.IVisitor<Object?>
     {
         private Environment environment = new();
+        private int loopDepth = 0;
         private sealed class BreakException : Exception { }
         private sealed class ContinueException : Exception { }
 
@@ -75,32 +76,43 @@ namespace Lox.Runtime
 
         public object? VisitWhileStmt(While stmt)
         {
-            while(IsTruthy(Evaluate(stmt.Condition)))
+            loopDepth++;
+
+            try
             {
-                try
+                while (IsTruthy(Evaluate(stmt.Condition)))
                 {
-                    Execute(stmt.Body);
-                } 
-                catch (ContinueException)
-                {
-                    continue;
-                } 
-                catch (BreakException)
-                {
-                    break;
+                    try
+                    {
+                        Execute(stmt.Body);
+                    }
+                    catch (ContinueException)
+                    {
+                        continue;
+                    }
+                    catch (BreakException)
+                    {
+                        break;
+                    }
                 }
+            } finally
+            {
+                loopDepth--;
             }
+            
 
             return null;
         }
 
         public object? VisitBreakStmt(Break stmt)
         {
+            if (loopDepth == 0) throw new RuntimeError(stmt.Keyword, "Cannot use 'break' outside of a loop.");
             throw new BreakException();
         }
 
         public object? VisitContinueStmt(Continue stmt)
         {
+            if (loopDepth == 0) throw new RuntimeError(stmt.Keyword, "Cannot use 'continue' outside of a loop.");
             throw new ContinueException();
         }
 
