@@ -3,7 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace Lox.Runtime
+namespace Lox.Runtime.Errors
 {
     public class RuntimeError(Token token, string message) : ApplicationException(message)
     {

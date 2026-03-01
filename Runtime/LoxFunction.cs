@@ -1,4 +1,5 @@
 ﻿using Lox.Ast.Statements;
+using Lox.Runtime.ControlFlow;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -22,8 +23,13 @@ namespace Lox.Runtime
             {
                 environment.Define(declaration.Parameters[i].lexeme, arguments[i]);
             }
-
-            interpreter.ExecuteBlock(declaration.Body, environment);
+            try
+            {
+                interpreter.ExecuteBlock(declaration.Body, environment);
+            } catch (ReturnException returnValue)
+            {
+                return returnValue.Value;
+            }
             return null;
         }
 

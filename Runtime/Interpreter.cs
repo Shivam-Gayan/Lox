@@ -1,8 +1,10 @@
 ﻿using Lox.Ast;
 using Lox.Ast.Expressions;
 using Lox.Ast.Statements;
+using Lox.Runtime.ControlFlow;
+using Lox.Runtime.Errors;
 using Lox.Scanner;
-using System.Net.Http.Headers;
+
 
 namespace Lox.Runtime
 {
@@ -11,8 +13,7 @@ namespace Lox.Runtime
         public readonly Environment globals = new();
         private Environment environment;
         private int loopDepth = 0;
-        private sealed class BreakException : Exception { }
-        private sealed class ContinueException : Exception { }
+
 
         public Interpreter()
         {
@@ -132,7 +133,10 @@ namespace Lox.Runtime
 
         public object? VisitReturnStmt(Return stmt)
         {
-            throw new NotImplementedException();
+            object value = null;
+            if (stmt.Value != null) value = Evaluate(stmt.Value);
+
+            throw new ReturnException(value);
         }
 
         public object? VisitClassStmt(Class stmt)

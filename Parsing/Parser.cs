@@ -3,6 +3,7 @@ using Lox.Ast.Expressions;
 using Lox.Ast.Statements;
 using Lox.Scanner;
 using System.Net.Http.Headers;
+using System.Runtime.CompilerServices;
 using System.Runtime.Intrinsics.Arm;
 
 
@@ -38,6 +39,8 @@ namespace Lox.Parsing
             if (Match(TokenType.IF)) return IfStatement();
 
             if (Match(TokenType.PRINT)) return PrintStatement();
+
+            if (Match(TokenType.RETURN)) return ReturnStatement();
 
             if (Match(TokenType.WHILE)) return WhileStatement();
 
@@ -271,6 +274,20 @@ namespace Lox.Parsing
         //=============================================
         //         Statement Helper Methods
         //=============================================
+
+        private Stmt ReturnStatement()
+        {
+            Token keyword = Previous();
+            Expr value = null;
+
+            if(!Check(TokenType.SEMICOLON))
+            {
+                value = Expression();
+            }
+
+            Consume(TokenType.SEMICOLON, "Expect ';' after return value.");
+            return new Return(keyword, value);
+        }
 
         private Stmt FunctionStatement(string kind)
         {

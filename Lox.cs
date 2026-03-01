@@ -2,6 +2,7 @@
 using Lox.Ast.Statements;
 using Lox.Parsing;
 using Lox.Runtime;
+using Lox.Runtime.Errors;
 using Lox.Scanner;
 using System;
 using System.Collections.Generic;
