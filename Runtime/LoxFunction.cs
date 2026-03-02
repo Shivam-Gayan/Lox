@@ -6,9 +6,10 @@ using System.Text;
 
 namespace Lox.Runtime
 {
-    public class LoxFunction(Function declaration) : ILoxCallable
+    public class LoxFunction(Function declaration, Environment closure) : ILoxCallable
     {
         private readonly Function declaration = declaration;
+        private readonly Environment closure = closure;
 
         public int Arity()
         {
@@ -17,7 +18,7 @@ namespace Lox.Runtime
 
         public object? Call(Interpreter interpreter, List<object> arguments)
         {
-            Environment environment = new(interpreter.globals);
+            Environment environment = new(closure);
 
             for (int i = 0; i < declaration.Parameters.Count; i++)
             {

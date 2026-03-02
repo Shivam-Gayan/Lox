@@ -126,7 +126,7 @@ namespace Lox.Runtime
 
         public object? VisitFunctionStmt(Function stmt)
         {
-            LoxFunction function = new(stmt);
+            LoxFunction function = new(stmt, environment);
             environment.Define(stmt.Name.lexeme, function);
             return null;
         }
