@@ -4,6 +4,7 @@ using Lox.Ast.Statements;
 using Lox.Runtime.ControlFlow;
 using Lox.Runtime.Errors;
 using Lox.Scanner;
+using System.Net.Http.Headers;
 
 
 namespace Lox.Runtime
@@ -142,7 +143,24 @@ namespace Lox.Runtime
 
         public object? VisitClassStmt(Class stmt)
         {
+            object? superclass = null;
+
+            if (stmt.Superclass != null)
+            {
+                superclass = Evaluate(stmt.Superclass);
+                if(!(superclass is LoxClass))
+                {
+                    throw new RuntimeError(stmt.Superclass.Name,"Superclass must be a class.");
+                }
+            }
+
             environment.Define(stmt.Name.lexeme, null);
+
+            if (stmt.Superclass != null)
+            {
+                environment = new Environment(environment);
+                environment.Define("super", superclass);
+            }
 
             Dictionary<string, LoxFunction> methods = [];
             foreach(Function method in stmt.Methods)
@@ -151,7 +169,13 @@ namespace Lox.Runtime
                 methods[method.Name.lexeme] = function;
             }
 
-            LoxClass klass = new(stmt.Name.lexeme,methods);
+            LoxClass klass = new(stmt.Name.lexeme, (LoxClass)superclass, methods);
+
+            if (superclass != null) 
+            {
+                environment = environment.enclosing;
+            };
+
             environment.Assign(stmt.Name, klass);
             return null;
         }
@@ -320,7 +344,19 @@ namespace Lox.Runtime
 
         public object VisitSuperExpr(Super expr)
         {
-            throw new NotImplementedException();
+            int distance = locals[expr];
+            LoxClass superclass = (LoxClass)environment.GetAt(distance, "super");
+
+            LoxInstance obj = (LoxInstance)environment.GetAt(distance - 1, "this");
+
+            LoxFunction method = superclass.FindMethod(expr.Method.lexeme);
+
+            if (method != null)
+            {
+                throw new RuntimeError(expr.Method, $"Undefined property '{expr.Method.lexeme}'.");
+            }
+
+            return method.Bind(obj);
         }
 
         public object VisitThisExpr(This expr)

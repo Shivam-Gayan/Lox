@@ -6,7 +6,7 @@ namespace Lox.Runtime
     public class Environment
     {
         private readonly Dictionary<string, object> values = [];
-        private readonly Environment? enclosing;
+        public readonly Environment? enclosing;
 
         public Environment()
         {

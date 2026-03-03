@@ -4,9 +4,10 @@ using System.Text;
 
 namespace Lox.Runtime
 {
-    public class LoxClass(string name, Dictionary<string, LoxFunction> methods) : ILoxCallable
+    public class LoxClass(string name, LoxClass superclass, Dictionary<string, LoxFunction> methods) : ILoxCallable
     {
         public readonly string name = name;
+        public LoxClass superclass = superclass;
         private readonly Dictionary<string, LoxFunction> methods = methods;
 
         public int Arity()
@@ -30,6 +31,11 @@ namespace Lox.Runtime
             if (methods.TryGetValue(name, out LoxFunction? value))
             {
                 return value;
+            }
+
+            if (superclass != null)
+            {
+                return superclass.FindMethod(name);
             }
 
             return null;

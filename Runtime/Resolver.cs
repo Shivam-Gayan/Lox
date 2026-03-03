@@ -19,12 +19,14 @@ namespace Lox.Runtime
     public enum ClassType
     {
         NONE,
-        CLASS
+        CLASS,
+        SUBCLASS
     }
     public class Resolver(Interpreter interpreter) : Expr.IVisitor<object?>, Stmt.IVisitor<object?>
     {
         private readonly Interpreter interpreter = interpreter;
         private readonly Stack<Dictionary<string, bool>> scopes = new();
+        private int loopDepth = 0;
         private FunctionType currentFunction = FunctionType.NONE;
         private ClassType currentClass = ClassType.NONE;
         public object? VisitBlockStmt(Block stmt)
@@ -121,8 +123,12 @@ namespace Lox.Runtime
 
         public object? VisitWhileStmt(While stmt)
         {
+            loopDepth++;
+
             Resolve(stmt.Condition);
             Resolve(stmt.Body);
+
+            loopDepth--;
 
             return null;
         }
@@ -269,7 +275,16 @@ namespace Lox.Runtime
 
         public object? VisitSuperExpr(Super expr)
         {
-            throw new NotImplementedException();
+            if (currentClass == ClassType.NONE)
+            {
+                Lox.Error(expr.Keyword, "Can't use 'super' outside of a class.");
+            } else if (currentClass != ClassType.SUBCLASS)
+            {
+                Lox.Error(expr.Keyword, "Can't use 'super' in a class with no superclass.");
+            }
+
+            ResolveLocal(expr, expr.Keyword);
+            return null;
         }
 
         public object? VisitThisExpr(This expr)
@@ -293,6 +308,23 @@ namespace Lox.Runtime
             Declare(stmt.Name);
             Define(stmt.Name);
 
+            if (stmt.Superclass != null && stmt.Name.lexeme.Equals(stmt.Superclass.Name.lexeme))
+            {
+                Lox.Error(stmt.Superclass.Name, "A class can't inherit from itself.");
+            }
+
+            if (stmt.Superclass != null)
+            {
+                currentClass = ClassType.SUBCLASS;
+                Resolve(stmt.Superclass);
+            }
+
+            if (stmt.Superclass != null)
+            {
+                BeginScope();
+                scopes.Peek().Add("super", true);
+            }
+
             BeginScope();
             scopes.Peek().Add("this", true);
 
@@ -307,6 +339,8 @@ namespace Lox.Runtime
 
             EndScope();
 
+            if (stmt.Superclass != null) EndScope();
+
             currentClass = enclosingClass;
 
             return null;
@@ -315,12 +349,16 @@ namespace Lox.Runtime
 
         public object? VisitBreakStmt(Break stmt)
         {
-            throw new NotImplementedException();
+            if (loopDepth == 0) Lox.Error(stmt.Keyword, "Can't use 'break' outside of a loop.");
+
+            return null;
         }
 
         public object? VisitContinueStmt(Continue stmt)
         {
-            throw new NotImplementedException();
+            if (loopDepth == 0) Lox.Error(stmt.Keyword, "Can't use 'continue' outside of a loop.");
+
+            return null;
         }
     }
 }

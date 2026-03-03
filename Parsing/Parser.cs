@@ -265,6 +265,15 @@ namespace Lox.Parsing
                 return new Literal(Previous().literal);
             }
 
+            if (Match(TokenType.SUPER))
+            {
+                Token keyword = Previous();
+                Consume(TokenType.DOT, "Expect '.' after 'super'.");
+                Token method = Consume(TokenType.IDENTIFIER, "Expect superclass method name.");
+
+                return new Super(keyword, method);
+            }
+
             if (Match(TokenType.THIS)) return new This(Previous());
 
             if (Match(TokenType.IDENTIFIER))
@@ -289,6 +298,15 @@ namespace Lox.Parsing
         private Stmt ClassDeclaration()
         {
             Token name = Consume(TokenType.IDENTIFIER, "Expect class name.");
+
+            Variable? superclass = null;
+
+            if (Match(TokenType.LESS))
+            {
+                Consume(TokenType.IDENTIFIER, "Expect superclass name.");
+                superclass = new Variable(Previous());
+            }
+
             Consume(TokenType.LEFT_BRACE, "Expect '{' before class body.");
 
             List<Function> methods = [];
@@ -300,7 +318,7 @@ namespace Lox.Parsing
 
             Consume(TokenType.RIGHT_BRACE, "Expect '}' after class body.");
 
-            return new Class(name, methods);
+            return new Class(name, superclass, methods);
         }
 
         private Stmt ReturnStatement()
