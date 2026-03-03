@@ -22,7 +22,7 @@ A **Statement** is an instruction that performs an action or alters the state of
 
 ---
 
-## The Visitor Pattern (The Secret Sauce)
+## The Visitor Pattern
 
 If you look at the AST node classes (like `Binary.cs` or `While.cs`), you will notice they contain almost no logic—they are purely data transfer objects (DTOs) holding properties. 
 
@@ -43,7 +43,7 @@ This elegant **double-dispatch** mechanism completely decouples the tree structu
 
 ---
 
-## 📂 Directory Breakdown
+## Directory Breakdown
 
 ### `/Expressions`
 This folder contains all the nodes that evaluate to values:
