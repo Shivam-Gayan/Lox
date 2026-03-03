@@ -1,0 +1,4 @@
+fun outer() {
+  var a = a;
+}
+outer();

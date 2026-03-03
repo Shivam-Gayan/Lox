@@ -1,0 +1,6 @@
+class A {
+  init() {
+    return 123;
+  }
+}
+A();

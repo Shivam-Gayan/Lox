@@ -51,11 +51,16 @@ namespace Lox.Runtime
             return null;
         }
 
-        public object? VisitVariableExpr(Variable expr)
+        public object VisitVariableExpr(Variable expr)
         {
-            if (!(scopes.Count == 0) && scopes.Peek()[expr.Name.lexeme] == false)
+            if (scopes.Count != 0)
             {
-                Lox.Error(expr.Name, "Can't read local variable in its own initializer.");
+                var scope = scopes.Peek();
+
+                if (scope.ContainsKey(expr.Name.lexeme) && scope[expr.Name.lexeme] == false)
+                {
+                    Lox.Error(expr.Name, "Cannot read local variable in its own initializer.");
+                }
             }
 
             ResolveLocal(expr, expr.Name);
@@ -203,11 +208,13 @@ namespace Lox.Runtime
 
         private void ResolveLocal(Expr expr, Token name)
         {
-            for (int i = scopes.Count - 1; i >= 0; i--)
+            var scopesArray = scopes.ToArray();
+
+            for (int i = 0; i < scopesArray.Length; i++)
             {
-                if (scopes.ElementAt(i).ContainsKey(name.lexeme))
+                if (scopesArray[i].ContainsKey(name.lexeme))
                 {
-                    interpreter.Resolve(expr, scopes.Count - 1 - i);
+                    interpreter.Resolve(expr, i);
                     return;
                 }
             }

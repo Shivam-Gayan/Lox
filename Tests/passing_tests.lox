@@ -1,0 +1,198 @@
+
+print "==== BASIC VARIABLES ====";
+var a = 10;
+print a;
+
+print "==== BLOCK SCOPE ====";
+var x = "global";
+{
+  var x = "block";
+  print x;
+}
+print x;
+
+print "==== IF / ELSE ====";
+if (true) {
+  print "if works";
+} else {
+  print "should not print";
+}
+
+print "==== WHILE LOOP ====";
+var i = 0;
+while (i < 3) {
+  print i;
+  i = i + 1;
+}
+
+print "==== BREAK ====";
+var b = 0;
+while (true) {
+  print b;
+  if (b == 2) break;
+  b = b + 1;
+}
+
+print "==== CONTINUE ====";
+var c = 0;
+while (c < 5) {
+  c = c + 1;
+  if (c == 3) continue;
+  print c;
+}
+
+print "==== NESTED LOOPS ====";
+var outer = 0;
+while (outer < 2) {
+  var inner = 0;
+  while (inner < 2) {
+    print outer * 10 + inner;
+    inner = inner + 1;
+  }
+  outer = outer + 1;
+}
+
+print "==== FUNCTIONS ====";
+fun greet(name) {
+  print "Hello, " + name;
+}
+greet("Lox");
+
+print "==== RETURN VALUE ====";
+fun add(a, b) {
+  return a + b;
+}
+print add(3, 4);
+
+print "==== RECURSION ====";
+fun fact(n) {
+  if (n <= 1) return 1;
+  return n * fact(n - 1);
+}
+print fact(5);
+
+print "==== CLOSURE ====";
+fun makeCounter() {
+  var count = 0;
+  fun inc() {
+    count = count + 1;
+    print count;
+  }
+  return inc;
+}
+var counter = makeCounter();
+counter();
+counter();
+
+print "==== CURRYING ====";
+fun multiply(a) {
+  fun inner(b) {
+    return a * b;
+  }
+  return inner;
+}
+var timesTwo = multiply(2);
+print timesTwo(5);
+
+print "==== CLASSES ====";
+class Person {
+  sayName() {
+    print this.name;
+  }
+}
+
+var jane = Person();
+jane.name = "Jane";
+jane.sayName();
+
+print "==== METHOD EXTRACTION (BOUND) ====";
+var method = jane.sayName;
+method();
+
+print "==== MULTIPLE INSTANCES ====";
+var john = Person();
+john.name = "John";
+john.sayName();
+
+print "==== INITIALIZER ====";
+
+class Point {
+  init(x, y) {
+    this.x = x;
+    this.y = y;
+  }
+
+  printPoint() {
+    print this.x;
+    print this.y;
+  }
+}
+
+var p = Point(2, 3);
+p.printPoint();
+
+
+print "==== METHOD CALLING METHOD ====";
+
+class Greeter {
+  greet() {
+    this.say();
+  }
+
+  say() {
+    print "Hi";
+  }
+}
+
+Greeter().greet();
+
+print "==== CLOSURE SHADOWING ====";
+
+var a = "global";
+
+fun outer() {
+  var a = "outer";
+  fun inner() {
+    print a;
+  }
+  return inner;
+}
+
+var f = outer();
+f();
+
+
+print "==== LOOP SCOPE TEST ====";
+
+var i = 100;
+
+while (false) {
+  var i = 0;
+}
+
+print i;
+
+print "==== GLOBAL ACCESS ====";
+
+var g = 42;
+
+fun test() {
+  print g;
+}
+
+test();
+
+print "==== DEEP CLOSURE ====";
+
+fun a() {
+  var x = "A";
+  fun b() {
+    fun c() {
+      print x;
+    }
+    return c;
+  }
+  return b;
+}
+
+var result = a()()();

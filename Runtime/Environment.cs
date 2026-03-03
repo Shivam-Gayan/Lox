@@ -19,7 +19,7 @@ namespace Lox.Runtime
         }
         public void Define(string name, object value)
         {
-            values.Add(name, value);
+            values[name] = value;
         }
 
         public object Get(Token name)

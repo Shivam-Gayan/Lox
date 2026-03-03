@@ -13,7 +13,7 @@ namespace Lox.Runtime
         public int Arity()
         {
             LoxFunction initializer = FindMethod("init");
-            if (initializer != null) return 0;
+            if (initializer == null) return 0;
 
             return initializer.Arity();
         }

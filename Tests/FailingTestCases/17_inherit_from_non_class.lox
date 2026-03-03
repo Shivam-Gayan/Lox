@@ -1,0 +1,2 @@
+var NotClass = 123;
+class A < NotClass {}

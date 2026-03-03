@@ -1,0 +1,4 @@
+class A {
+  init(a, b) {}
+}
+A(1);
