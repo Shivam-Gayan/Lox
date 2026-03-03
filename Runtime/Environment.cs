@@ -1,8 +1,5 @@
 ﻿using Lox.Scanner;
-using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Text;
+using Lox.Runtime.Errors;
 
 namespace Lox.Runtime
 {
@@ -35,6 +32,27 @@ namespace Lox.Runtime
             if (enclosing != null) return enclosing.Get(name);
 
             throw new RuntimeError(name, $"Undefined variable '{name.lexeme}'.");
+        }
+
+        public object GetAt(int distance, string name)
+        {
+            return Ancestor(distance).values[name];
+        }
+
+        public void AssignAt(int distance, Token name, object value)
+        {
+            Ancestor(distance).values[name.lexeme] = value;
+        }
+
+        public Environment Ancestor(int distance)
+        {
+            Environment environment = this;
+            for (int i = 0; i < distance; i++)
+            {
+                environment = environment.enclosing;
+            }
+
+            return environment;
         }
 
         public void Assign(Token name, object value)

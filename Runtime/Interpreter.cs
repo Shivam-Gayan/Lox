@@ -12,6 +12,7 @@ namespace Lox.Runtime
     {
         public readonly Environment globals = new();
         private Environment environment;
+        private readonly Dictionary<Expr, int> locals = [];
         private int loopDepth = 0;
 
 
@@ -126,7 +127,7 @@ namespace Lox.Runtime
 
         public object? VisitFunctionStmt(Function stmt)
         {
-            LoxFunction function = new(stmt, environment);
+            LoxFunction function = new(stmt, environment, false);
             environment.Define(stmt.Name.lexeme, function);
             return null;
         }
@@ -141,7 +142,18 @@ namespace Lox.Runtime
 
         public object? VisitClassStmt(Class stmt)
         {
-            throw new NotImplementedException();
+            environment.Define(stmt.Name.lexeme, null);
+
+            Dictionary<string, LoxFunction> methods = [];
+            foreach(Function method in stmt.Methods)
+            {
+                LoxFunction function = new(method, environment, method.Name.lexeme.Equals("init"));
+                methods[method.Name.lexeme] = function;
+            }
+
+            LoxClass klass = new(stmt.Name.lexeme,methods);
+            environment.Assign(stmt.Name, klass);
+            return null;
         }
 
         //============================================
@@ -150,7 +162,15 @@ namespace Lox.Runtime
         public object VisitAssignExpr(Assign expr)
         {
             object value = Evaluate(expr.Value);
-            environment.Assign(expr.Name, value);
+
+            if(locals.TryGetValue(expr, out int val))
+            {
+                environment.AssignAt(val, expr.Name, value);
+            } else
+            {
+                globals.Assign(expr.Name, value);
+            }
+
             return value;
         }
 
@@ -249,7 +269,14 @@ namespace Lox.Runtime
 
         public object VisitGetExpr(Get expr)
         {
-            throw new NotImplementedException();
+            object obj = Evaluate(expr.Object);
+
+            if (obj is LoxInstance)
+            {
+                return ((LoxInstance)obj).Get(expr.Name);
+            }
+
+            throw new RuntimeError(expr.Name, "Only instances have properties.");
         }
 
         public object VisitGroupingExpr(Grouping expr)
@@ -279,7 +306,16 @@ namespace Lox.Runtime
 
         public object VisitSetExpr(Set expr)
         {
-            throw new NotImplementedException();
+            object obj = Evaluate(expr.Object);
+
+            if(!(obj is LoxInstance))
+            {
+                throw new RuntimeError(expr.Name, "Only instances have fields.");
+
+            }
+            object value = Evaluate(expr.Value);
+            ((LoxInstance)obj).Set(expr.Name, value);
+            return value;
         }
 
         public object VisitSuperExpr(Super expr)
@@ -289,7 +325,7 @@ namespace Lox.Runtime
 
         public object VisitThisExpr(This expr)
         {
-            throw new NotImplementedException();
+            return LookUpVariable(expr.Keyword, expr);
         }
 
         public object? VisitUnaryExpr(Unary expr)
@@ -315,16 +351,31 @@ namespace Lox.Runtime
 
         public object VisitVariableExpr(Variable expr)
         {
-            return environment.Get(expr.Name);
+            return LookUpVariable(expr.Name, expr);
         }
 
         //=============================================
         //               Helper Methods
         //=============================================
+        private object LookUpVariable(Token name, Expr expr)
+        {
+            if (locals.TryGetValue(expr, out int distance))
+            {
+                return environment.GetAt(distance, name.lexeme);
+            } else
+            {
+                return globals.Get(name);
+            }
+        }
 
         private void Execute(Stmt stmt)
         {
             stmt.Accept(this);
+        }
+
+        public void Resolve(Expr expr, int depth)
+        {
+            locals.Add(expr, depth);
         }
 
         public void ExecuteBlock(List<Stmt> statements, Environment environment)

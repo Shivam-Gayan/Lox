@@ -56,9 +56,12 @@ namespace Lox
 
             if (hadError) return;
 
-            if (replMode &&
-                statements.Count == 1 &&
-                statements[0] is Expression exprStmt)
+            Resolver resolver = new(interpreter);
+            resolver.Resolve(statements);
+
+            if (hadError) return;
+
+            if (replMode && statements.Count == 1 && statements[0] is Expression exprStmt)
             {
                 var value = interpreter.Evaluate(exprStmt.ExpressionValue);
                 Console.WriteLine(interpreter.Stringify(value));

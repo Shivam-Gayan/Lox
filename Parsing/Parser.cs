@@ -28,6 +28,8 @@ namespace Lox.Parsing
 
         private Stmt Statement()
         {
+            if (Match(TokenType.CLASS)) return ClassDeclaration();
+
             if (Match(TokenType.FUN)) return FunctionStatement("function");
 
             if (Match(TokenType.BREAK)) return BreakStatement();
@@ -66,6 +68,9 @@ namespace Lox.Parsing
                 {
                     Token name = ((Variable)expr).Name;
                     return new Assign(name, value);
+                } else if (expr is Get get)
+                {
+                    return new Set(get.Object, get.Name, value);
                 }
 
                 Error(equals, "Invalid assignment target.");
@@ -236,6 +241,10 @@ namespace Lox.Parsing
                 if (Match(TokenType.LEFT_PAREN))
                 {
                     expr = FinishCall(expr);
+                } else if (Match(TokenType.DOT))
+                {
+                    Token name = Consume(TokenType.IDENTIFIER, "Expect property name after '.' .");
+                    expr = new Get(expr, name);
                 } else
                 {
                     break;
@@ -256,6 +265,8 @@ namespace Lox.Parsing
                 return new Literal(Previous().literal);
             }
 
+            if (Match(TokenType.THIS)) return new This(Previous());
+
             if (Match(TokenType.IDENTIFIER))
             {
                 return new Variable(Previous());
@@ -275,6 +286,23 @@ namespace Lox.Parsing
         //         Statement Helper Methods
         //=============================================
 
+        private Stmt ClassDeclaration()
+        {
+            Token name = Consume(TokenType.IDENTIFIER, "Expect class name.");
+            Consume(TokenType.LEFT_BRACE, "Expect '{' before class body.");
+
+            List<Function> methods = [];
+
+            while(!Check(TokenType.RIGHT_BRACE)  && !IsAtEnd())
+            {
+                methods.Add(FunctionStatement("method"));
+            }
+
+            Consume(TokenType.RIGHT_BRACE, "Expect '}' after class body.");
+
+            return new Class(name, methods);
+        }
+
         private Stmt ReturnStatement()
         {
             Token keyword = Previous();
@@ -289,7 +317,7 @@ namespace Lox.Parsing
             return new Return(keyword, value);
         }
 
-        private Stmt FunctionStatement(string kind)
+        private Function FunctionStatement(string kind)
         {
             Token name = Consume(TokenType.IDENTIFIER, $"Expect {kind} name.");
 
